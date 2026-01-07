@@ -1,0 +1,197 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Image Match System</title>
+
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            background: #f4f6f8;
+        }
+
+        .container {
+            width: 800px;
+            margin: 60px auto;
+            background: white;
+            padding: 30px;
+            border-radius: 10px;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.1);
+            text-align: center;
+        }
+
+        button {
+            padding: 10px 20px;
+            margin: 10px;
+            font-size: 16px;
+            border: none;
+            border-radius: 6px;
+            cursor: pointer;
+        }
+
+        .upload-btn {
+            background: #4CAF50;
+            color: white;
+        }
+
+        .match-btn {
+            background: #2196F3;
+            color: white;
+        }
+
+        .message {
+    margin: 15px;
+    font-weight: bold;
+    padding: 10px;
+    border-radius: 6px;
+    display: none;
+}
+
+.success {
+    color: #155724;
+    background-color: #d4edda;
+    border: 1px solid #c3e6cb;
+}
+
+.error {
+    color: #721c24;
+    background-color: #f8d7da;
+    border: 1px solid #f5c6cb;
+}
+
+
+        .images {
+            display: flex;
+            justify-content: space-around;
+            margin-top: 30px;
+        }
+
+        .box {
+            width: 45%;
+            border: 1px dashed #ccc;
+            padding: 15px;
+            border-radius: 8px;
+            min-height: 260px;
+        }
+
+        img {
+            max-width: 100%;
+            max-height: 220px;
+            margin-top: 10px;
+            border-radius: 6px;
+        }
+
+        .placeholder {
+            color: #888;
+            margin-top: 80px;
+        }
+    </style>
+</head>
+
+<body>
+
+<div class="container">
+    <h2>Image Match System</h2>
+
+    <input type="file" id="fileInput"><br>
+
+    <button class="upload-btn" onclick="uploadImage()">Upload Image</button>
+    <button class="match-btn" onclick="matchImage()">Match Image</button>
+
+    <div id="resultMessage" class="message"></div>
+
+    <div class="images">
+        <div class="box">
+            <h3>New Image</h3>
+            <img id="newImage" style="display:none;">
+        </div>
+
+        <div class="box">
+            <h3>Matched With</h3>
+            <img id="matchedImage" style="display:none;">
+            <div id="noMatchText" class="placeholder"></div>
+        </div>
+    </div>
+</div>
+
+<script>
+    function uploadImage() {
+        const file = document.getElementById("fileInput").files[0];
+        if (!file) {
+            alert("Please select an image");
+            return;
+        }
+
+        const formData = new FormData();
+        formData.append("file", file);
+
+        fetch("/api/image/upload", {
+            method: "POST",
+            body: formData
+        })
+        .then(res => res.text())
+        .then(msg => {
+            const result = document.getElementById("resultMessage");
+            result.innerText = msg;
+            result.className = "message success";
+            result.style.display = "block";
+        })
+        .catch(() => {
+            const result = document.getElementById("resultMessage");
+            result.innerText = "Image upload failed";
+            result.className = "message error";
+            result.style.display = "block";
+        });
+    }
+
+    function matchImage() {
+        const file = document.getElementById("fileInput").files[0];
+        if (!file) {
+            alert("Please select an image");
+            return;
+        }
+
+        const formData = new FormData();
+        formData.append("file", file);
+
+        fetch("/api/image/match", {
+            method: "POST",
+            body: formData
+        })
+        .then(res => res.json())
+        .then(data => {
+
+            const result = document.getElementById("resultMessage");
+            result.innerText = data.message;
+            result.className = data.matched ? "message success" : "message error";
+            result.style.display = "block";
+
+            // Always show NEW image
+            const newImg = document.getElementById("newImage");
+            newImg.src = "data:image/jpeg;base64," + data.uploadedImage;
+            newImg.style.display = "block";
+
+            const matchedImg = document.getElementById("matchedImage");
+            const noMatchText = document.getElementById("noMatchText");
+
+            if (data.matched && data.matchedImage) {
+                matchedImg.src = "data:image/jpeg;base64," + data.matchedImage;
+                matchedImg.style.display = "block";
+                noMatchText.innerText = "";
+            } else {
+                matchedImg.style.display = "none";
+                matchedImg.src = "";
+                noMatchText.innerText = "Image is not matched with existing images";
+            }
+        })
+        .catch(() => {
+            const result = document.getElementById("resultMessage");
+            result.innerText = "Image matching failed";
+            result.className = "message error";
+            result.style.display = "block";
+        });
+    }
+</script>
+
+</body>
+</html>
